@@ -10,6 +10,12 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Formatter;
+import java.util.List;
+
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
@@ -19,6 +25,7 @@ public class GameServiceImpl implements GameService {
     private final GameRepository gameRepository;
     private final ValidatorUtil validatorUtil;
     private UserDto userDto;
+
     @Autowired
     public GameServiceImpl(ModelMapper modelMapper
             , GameRepository gameRepository, ValidatorUtil validatorUtil) {
@@ -29,18 +36,28 @@ public class GameServiceImpl implements GameService {
     @Override
     public String addGame(AddGameDto addGameDto) {
         StringBuilder sb = new StringBuilder();
-        if((this.userDto.getRole() == Role.USER) ||
-                this.userDto == null) {
-            sb.append("Invalid logged in user,");
 
-        } else if  (this.validatorUtil.isValid(addGameDto)){
-            Game game = this.modelMapper.map(addGameDto,Game.class);
-            this.gameRepository.saveAndFlush(game);
-            sb.append(String.format("Added %s ",game.getTitle()));
+        if (this.gameRepository.existsByTitle(addGameDto.getTitle())){
+            sb.append("Already exist game with this title!");
+
         }else {
-            this.validatorUtil.violations(addGameDto)
-                    .forEach(e-> sb.append(e.getMessage())
-                            .append(System.lineSeparator()));
+            if (this.userDto == null){
+                sb.append("Invalid logged in user.");
+            }
+            else if((this.userDto.getRole() == Role.USER)) {
+                sb.append("Invalid logged in user,");
+
+            } else if  (this.validatorUtil.isValid(addGameDto)){
+
+                Game game = this.modelMapper.map(addGameDto,Game.class);
+                this.gameRepository.saveAndFlush(game);
+                sb.append(String.format("Added %s ",game.getTitle()));
+
+            }else {
+                this.validatorUtil.violations(addGameDto)
+                        .forEach(e-> sb.append(e.getMessage())
+                                .append(System.lineSeparator()));
+            }
         }
         return sb.toString();
     }
@@ -71,5 +88,85 @@ public class GameServiceImpl implements GameService {
             }
         }
         return sb.toString();
+    }
+
+    public String editGame(Long id, List<String> values) {
+
+        StringBuilder sb =  new StringBuilder();
+
+        if((this.userDto == null)){
+            sb.append("Invalid logged in user.");
+
+        }else if (this.userDto.getRole() == Role.USER) {
+            sb.append("Invalid logged in user,");
+
+        }else {
+
+            if (this.gameRepository.findById(id).isEmpty()) {
+
+                sb.append("Invalid game id!");
+            } else {
+
+                Game game = this.gameRepository.findById(id).get();
+
+                for (int i = 0; i < values.size(); i++) {
+
+                    String[] tokens = values.get(i).split("=");
+                    String command = tokens[0];
+
+                    switch (command) {
+                        case "price":
+                            BigDecimal price = new BigDecimal(tokens[1]);
+                            game.setPrice(price);
+                            break;
+                        case "size":
+                            double size = Double.parseDouble(tokens[1]);
+                            game.setSize(size);
+                            break;
+                        case "title":
+                            String title = tokens[1];
+                            game.setTitle(title);
+                            break;
+                        case "trailer":
+                            game.setTrailer(tokens[1]);
+                            break;
+                        case "imageThumbnail":
+                            game.setImageThumbnail(tokens[1]);
+                            break;
+                        case "description":
+                            game.setDescription(tokens[1]);
+                            break;
+                    }
+                }
+                this.gameRepository.saveAndFlush(game);
+                sb.append(String.format("Edited %s", game.getTitle()));
+
+            }
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public boolean isExistTitle(String title) {
+        return this.gameRepository.existsByTitle(title);
+    }
+
+    @Override
+    public void printAllGame() {
+        this.gameRepository.findAll()
+                .forEach(g-> System.out.printf
+                        ("%s %s",g.getTitle(),g.getPrice()));
+    }
+
+    @Override
+    public void getDetailAbout(String titleGame) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("\"dd-MM-yyyy\"");
+        Game game = this.gameRepository.findByTitle(titleGame);
+        String date = formatter.format(game.getRealiseDate());
+                System.out.printf("Title: %s%n",game.getTitle());
+        System.out.printf("Price: %s%n",game.getPrice());
+        System.out.printf("Description: %s%n",game.getDescription());
+        System.out.printf("Release date: %s %n",date);
+
     }
 }

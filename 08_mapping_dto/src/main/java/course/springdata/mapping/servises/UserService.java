@@ -9,4 +9,8 @@ public interface UserService {
 
    String loginUser(UserLoginDto userLoginDto);
    String logoutUser();
+   boolean isExistingEmail(String email);
+   String buyGame(Long gameId);
+
+   void printOwnedGames();
 }

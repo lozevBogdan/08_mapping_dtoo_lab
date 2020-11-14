@@ -27,6 +27,7 @@ public class AddGameDto {
 
     @Length(min = 20,message = "The description length must be at least 20 !")
     private String description;
+
     private LocalDate realiseDate;
 
 

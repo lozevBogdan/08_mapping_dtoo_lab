@@ -18,7 +18,7 @@ public class Game extends BaseEntity{
    private double size;
    private BigDecimal price;
    private String description;
-   private LocalDate releaseDate;
+   private LocalDate realiseDate;
    private List<User> users;
 
 
@@ -78,12 +78,12 @@ public class Game extends BaseEntity{
         this.description = description;
     }
     @Column(name = "release_date")
-    public LocalDate getReleaseDate() {
-        return releaseDate;
+    public LocalDate getRealiseDate() {
+        return realiseDate;
     }
 
-    public void setReleaseDate(LocalDate releaseDate) {
-        this.releaseDate = releaseDate;
+    public void setRealiseDate(LocalDate realiseDate) {
+        this.realiseDate = realiseDate;
     }
 
     @ManyToMany(mappedBy = "games")
